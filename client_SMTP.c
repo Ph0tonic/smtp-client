@@ -4,6 +4,7 @@
   * Date : 3 juin 2017
   * Context : Cours Réseaux INF1j
   * Authors : Malik Fleury et Bastien Wermeille
+  * Version : 1.0
   */
 
 #include <stdio.h>
@@ -15,7 +16,7 @@
 #include <sys/socket.h>
 
 #define SENDER       argv[1]
-#define SUBJECT       argv[2]
+#define SUBJECT      argv[2]
 #define BODY         argv[3]
 #define SERVER       argv[4]
 #define RECIPIENT    argv[5]
@@ -31,7 +32,7 @@ typedef enum
 
 /* Function definition */
 static FILE *tcp_connect(const char *hostname, const char *port);
-void smtp_send(char* sender,char* recipient,char* subject,char* body,char* server,char* nPort);
+int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server,char* nPort);
 void tcp_close(FILE *f);
 int tcp_send(FILE *f, char *cmd);
 int errorManager(char first, char second, char third);
@@ -42,7 +43,17 @@ int main(int argc, char *argv[])
 {
 	if(argc != 6 && argc !=7)
   {
-    fprintf(stderr, "%s: Bad arguments.\n", argv[0]);
+    printf("%s: Bad arguments.\n\n", argv[0]);
+
+    printf("/**\n");
+    printf("  * Description : Client SMTP implémenté sur la base d'un client TCP simple\n");
+    printf("  * Using : ./client_smtp expéditeur sujet FichierCorps serveurSmtp destinataire\n");
+    printf("  * Date : 3 juin 2017\n");
+    printf("  * Context : Cours Réseaux INF1j\n");
+    printf("  * Authors : Malik Fleury et Bastien Wermeille\n");
+    printf("  * Version : 1.0\n");
+    printf("  */)\n");
+
     return 1;
   }
   else
@@ -57,7 +68,8 @@ int main(int argc, char *argv[])
   }
 }
 
-int smtp_send(sender,recipient,subject,body,server,port)
+//Sending of an smtp request
+int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server,char* port)
 {
   //Initial state
   EtatsSmtp smtpState=CONNECTION;
@@ -79,7 +91,7 @@ int smtp_send(sender,recipient,subject,body,server,port)
     //State machine
 		switch(smtpState)
 		{
-			case CONNEXION:
+			case CONNECTION:
 				if((f = tcp_connect(server, port)))
 				{
 					printf("Connection ok\n");
@@ -93,10 +105,12 @@ int smtp_send(sender,recipient,subject,body,server,port)
 				}
 				break;
 			case HELO:
+        printf("Test ok\n");
 				codeErr = tcp_send(f,"HELO client\r\n");
 				(codeErr == 0) ? (smtpState = FROM) : (smtpState = ERROR);
 				break;
 			case FROM:
+      printf("from %d\n",codeErr);
 				sprintf(buffer,"MAIL FROM: <%s>\r\n",sender);
 				codeErr = tcp_send(f,buffer);
 				(codeErr == 0) ? (smtpState = TO) : (smtpState = ERROR);
@@ -108,7 +122,7 @@ int smtp_send(sender,recipient,subject,body,server,port)
 				break;
 			case DATA:
 				codeErr = tcp_send(f,"DATA\r\n");
-				(codeErr == 0) ? (smtpState = DATA2) : (smtpState = ERROR);//3
+				(codeErr == 2) ? (smtpState = DATA2) : (smtpState = ERROR);//3
 				break;
 			case DATA2:
 				sprintf(buffer,"Subject: %s\n",subject);
@@ -146,12 +160,15 @@ int smtp_send(sender,recipient,subject,body,server,port)
         return -1;
         break;
 		}
-		sleep(1);
+    printf("end %d\n",attempt);
+    sleep(1);
 	}
 
   //Close opened file and socket
 	tcp_close(f);
 	fclose(message);
+
+  return 0;
 }
 
 //Send data to smtp server et get error code
@@ -173,6 +190,7 @@ int tcp_send(FILE *f, char *cmd)
 // -1 -> KO
 //  0 -> OK
 //  1 -> Try again
+//  2 -> Further informations required
 int errorManager(char first, char second, char third)
 {
   switch (first){
@@ -194,7 +212,7 @@ int errorManager(char first, char second, char third)
 
 	    case '3':
 		printf("The server has understood the request, but requires further information to complete it.\n\n");
-		return -1;
+		return 2;
 
 	    case '4':
 		printf("The server has encountered a temporary failure.\n");
@@ -207,7 +225,7 @@ int errorManager(char first, char second, char third)
 		default:
 	    printf("Thiserror seems impossible \n");
 		return 0;
-    	}
+	}
 }
 
 //Close tcp connection
