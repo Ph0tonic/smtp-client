@@ -1,0 +1,3 @@
+# BINARY/COMPILED SOURCE #
+*.o
+client_SMTP
