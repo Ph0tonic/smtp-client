@@ -23,7 +23,7 @@
 #define PORT         argv[6]
 
 #define DEFAULTPORT "25"//587
-#define MAXATTEMPT 3
+#define MAXATTEMPT 5
 
 typedef enum
 {
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
     printf("/**\n");
     printf("  * Description : Client SMTP implémenté sur la base d'un client TCP simple\n");
-    printf("  * Using : ./client_smtp expéditeur sujet FichierCorps serveurSmtp destinataire\n");
+    printf("  * Using : ./client_smtp expéditeur sujet FichierCorps serveurSmtp destinataire (port)OPTIONNEL\n");
     printf("  * Date : 3 juin 2017\n");
     printf("  * Context : Cours Réseaux INF1j\n");
     printf("  * Authors : Malik Fleury et Bastien Wermeille\n");
@@ -101,6 +101,7 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 				else
 				{
 					perror("Error while conecting to the server\n");
+					codeErr = -1;
 					smtpState = ERROR;
 				}
 				break;
@@ -151,6 +152,7 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 				printf("New attempt in five minutes...\n");
 				sleep(300);
 				attempt++;
+				tcp_close(f);
 				smtpState = CONNECTION;
 				break;
 			default:
@@ -160,7 +162,6 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
         return -1;
         break;
 		}
-    printf("end %d\n",attempt);
     sleep(1);
 	}
 
@@ -220,11 +221,11 @@ int errorManager(char first, char second, char third)
 
 	    case '5':
 	    printf("The server has encountered an error.\n");
-		return 0;
+		return -1;
 
 		default:
 	    printf("Thiserror seems impossible \n");
-		return 0;
+		return -1;
 	}
 }
 
