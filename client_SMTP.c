@@ -85,7 +85,7 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 	if(message == NULL) return -1;
 
   //log
-	fprintf(stdout, "Send from %s to %s with message %s : %s on %s :: %s\n",sender,recipient,subject,body,server,port);
+	//fprintf(stdout, "Send from %s to %s with message '%s' : %s on %s :: %s\n\n",sender,recipient,subject,body,server,port);
 	while(attempt < MAXATTEMPT)
 	{
     //State machine
@@ -106,12 +106,10 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 				}
 				break;
 			case HELO:
-        printf("Test ok\n");
 				codeErr = tcp_send(f,"HELO client\r\n");
 				(codeErr == 0) ? (smtpState = FROM) : (smtpState = ERROR);
 				break;
 			case FROM:
-      printf("from %d\n",codeErr);
 				sprintf(buffer,"MAIL FROM: <%s>\r\n",sender);
 				codeErr = tcp_send(f,buffer);
 				(codeErr == 0) ? (smtpState = TO) : (smtpState = ERROR);
@@ -126,10 +124,14 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 				(codeErr == 2) ? (smtpState = DATA2) : (smtpState = ERROR);//3
 				break;
 			case DATA2:
+				//Header
 				sprintf(buffer,"Subject: %s\n",subject);
+				printf("Subject: %s\n",subject);
 				fprintf(f,buffer);
+				//Content
 				while(fgets(buffer,sizeof(buffer),message))
 				{
+					printf(buffer);
 					fprintf(f,buffer);
 				}
 				codeErr = tcp_send(f,"\r\n.\r\n");
@@ -175,13 +177,16 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 //Send data to smtp server et get error code
 int tcp_send(FILE *f, char *cmd)
 {
+	printf("\n");
+	printf(cmd);
 	fprintf(f,cmd);
 	fflush(f);
 	char buffer[255];
 	do
 	{
 		fgets(buffer, sizeof(buffer), f);
-		puts(buffer);
+		printf(buffer);
+		//puts(buffer);
 	}while(buffer[0] < '2' || buffer[0] > '5');
 
 	return errorManager(buffer[0],buffer[1],buffer[2]);
@@ -194,6 +199,7 @@ int tcp_send(FILE *f, char *cmd)
 //  2 -> Further informations required
 int errorManager(char first, char second, char third)
 {
+	//printf("%c%c%c ",first,second,third);
   switch (first){
 		case '1':
 		printf("The server does not respond\n");
@@ -224,7 +230,7 @@ int errorManager(char first, char second, char third)
 		return -1;
 
 		default:
-	    printf("Thiserror seems impossible \n");
+	    printf("This error seems impossible \n");
 		return -1;
 	}
 }
