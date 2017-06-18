@@ -125,9 +125,16 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 				break;
 			case DATA2:
 				//Header
+				sprintf(buffer,"From: %s\n",sender);
+				printf("From: %s\n",sender);
+				fprintf(f,buffer);
+				sprintf(buffer,"To: %s\n",recipient);
+				printf("To: %s\n",recipient);
+				fprintf(f,buffer);
 				sprintf(buffer,"Subject: %s\n",subject);
 				printf("Subject: %s\n",subject);
 				fprintf(f,buffer);
+				
 				//Content
 				while(fgets(buffer,sizeof(buffer)-1,message))
 				{
