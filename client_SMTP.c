@@ -80,7 +80,7 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 
   //Check body message
 	FILE *f = NULL;
-	char buffer[1024];
+	char buffer[1025];
 	FILE *message = fopen(body,"r");
 	if(message == NULL) return -1;
 
@@ -129,8 +129,11 @@ int smtp_send(char* sender,char* recipient,char* subject,char* body,char* server
 				printf("Subject: %s\n",subject);
 				fprintf(f,buffer);
 				//Content
-				while(fgets(buffer,sizeof(buffer),message))
+				while(fgets(buffer,sizeof(buffer)-1,message))
 				{
+					if(buffer[0]=='.'){
+						strcpy(buffer+1,buffer);
+					}
 					printf(buffer);
 					fprintf(f,buffer);
 				}
